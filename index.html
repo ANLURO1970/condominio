@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Condomínio - Gestão & Acesso</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Cabeçalho -->
+    <header class="bg-indigo-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col lg:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-700 p-3 rounded-lg text-indigo-200">
+                    <i class="fa-solid fa-building text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">Gestão de Condomínio</h1>
+                    <p class="text-xs text-indigo-300" id="subInfoPredios">Controle de prédios, unidades e moradores</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center justify-center gap-2.5">
+                <!-- Seletor de Mês -->
+                <div class="flex items-center bg-indigo-800 rounded-lg p-1.5 border border-indigo-700">
+                    <label for="mesSelect" class="text-xs text-indigo-300 px-2 font-medium">Mês:</label>
+                    <select id="mesSelect" class="bg-indigo-900 text-white text-sm font-semibold rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        <option value="2026-01">Janeiro/2026</option>
+                        <option value="2026-02">Fevereiro/2026</option>
+                        <option value="2026-03">Março/2026</option>
+                        <option value="2026-04">Abril/2026</option>
+                        <option value="2026-05">Maio/2026</option>
+                        <option value="2026-06">Junho/2026</option>
+                        <option value="2026-07">Julho/2026</option>
+                        <option value="2026-08" selected>Agosto/2026</option>
+                        <option value="2026-09">Setembro/2026</option>
+                        <option value="2026-10">Outubro/2026</option>
+                        <option value="2026-11">Novembro/2026</option>
+                        <option value="2026-12">Dezembro/2026</option>
+                    </select>
+                </div>
+
+                <!-- Botões Restritos por Permissão -->
+                <button id="btnNovoPredio" onclick="abrirModalNovoPredio()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-plus-circle"></i> Novo Prédio
+                </button>
+
+                <button id="btnExportarCsv" onclick="exportarDados()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-file-excel"></i> Exportar CSV
+                </button>
+
+                <button id="btnGerenciarUsuarios" onclick="abrirModalUsuarios()" class="hidden bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-users-gear"></i> Usuários & Acessos
+                </button>
+
+                <!-- Status de Login / Botão Entrar / Sair -->
+                <div class="h-6 w-px bg-indigo-700 mx-1 hidden sm:block"></div>
+                
+                <div id="areaUsuarioLogado" class="flex items-center gap-2">
+                    <span id="badgePerfil" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-indigo-800 text-indigo-200 border border-indigo-700 flex items-center gap-1.5">
+                        <i class="fa-solid fa-eye"></i> Visitante (Visualização)
+                    </span>
+                    <button id="btnAbrirLogin" onclick="abrirModalLogin()" class="bg-white text-indigo-900 hover:bg-indigo-50 px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-right-to-bracket"></i> Entrar
+                    </button>
+                    <button id="btnSair" onclick="fazerLogout()" class="hidden bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 shadow-sm" title="Sair da conta">
+                        <i class="fa-solid fa-right-from-bracket"></i> Sair
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Banner Informativo de Nível de Acesso -->
+    <div id="bannerPermissao" class="bg-slate-200/80 border-b border-slate-300 text-slate-700 text-xs py-2 px-4">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
+            <span id="textoPermissaoAtual"><i class="fa-solid fa-lock text-slate-500 mr-1"></i> <strong>Modo Somente Leitura:</strong> Faça login como Administrador ou Usuário autorizado para editar dados.</span>
+            <span class="text-slate-500 hidden md:inline">Acesso Admin padrão: <strong>admin</strong> / Senha: <strong>admin123</strong></span>
+        </div>
+    </div>
+
+    <!-- Conteúdo Principal -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+        <!-- Cards de Resumo / Dashboard -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total de Unidades</p>
+                    <h3 class="text-2xl font-bold text-slate-800 mt-1" id="statTotalUnidades">0</h3>
+                    <span class="text-xs text-slate-500" id="statTotalPrediosSub">0 Prédios cadastrados</span>
+                </div>
+                <div class="bg-indigo-50 text-indigo-600 p-3.5 rounded-xl">
+                    <i class="fa-solid fa-city text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-emerald-500">Adimplentes (Em Dia)</p>
+                    <h3 class="text-2xl font-bold text-emerald-600 mt-1" id="statAdimplentes">0</h3>
+                    <span class="text-xs text-emerald-600 font-medium" id="statAdimplentesPct">0%</span>
+                </div>
+                <div class="bg-emerald-50 text-emerald-600 p-3.5 rounded-xl">
+                    <i class="fa-solid fa-circle-check text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-rose-500">Inadimplentes</p>
+                    <h3 class="text-2xl font-bold text-rose-600 mt-1" id="statInadimplentes">0</h3>
+                    <span class="text-xs text-rose-600 font-medium" id="statInadimplentesPct">0%</span>
+                </div>
+                <div class="bg-rose-50 text-rose-600 p-3.5 rounded-xl">
+                    <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Saldo Líquido do Mês</p>
+                    <h3 class="text-xl font-bold text-slate-800 mt-1" id="statSaldoLiquido">R$ 0,00</h3>
+                    <span class="text-xs text-slate-500">Recebido vs Devido</span>
+                </div>
+                <div class="bg-amber-50 text-amber-600 p-3.5 rounded-xl">
+                    <i class="fa-solid fa-wallet text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros e Navegação por Prédio -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
+            <div class="flex flex-col lg:flex-row justify-between items-center gap-4">
+                <!-- Abas dos Prédios -->
+                <div class="flex flex-wrap gap-2 items-center" id="predioTabs"></div>
+
+                <!-- Busca e Filtro de Status -->
+                <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                    <button id="btnNovoApartamento" onclick="abrirModalNovoApartamento()" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus text-indigo-600"></i> Adicionar Apartamento
+                    </button>
+
+                    <div class="relative flex-grow sm:flex-grow-0">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-search"></i>
+                        </span>
+                        <input type="text" id="searchInput" placeholder="Buscar ap, morador..." 
+                            class="w-full sm:w-56 pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white">
+                    </div>
+
+                    <select id="statusFilter" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="todos">Todos os Status</option>
+                        <option value="adimplente">Adimplentes</option>
+                        <option value="inadimplente">Inadimplentes</option>
+                        <option value="saldo_positivo">Com Saldo Positivo (+)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de Unidades -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <h3 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-building text-indigo-600"></i> <span id="tituloPredioAtual">Prédio</span>
+                    </h3>
+                    <button id="btnExcluirPredio" onclick="removerPredioAtual()" class="hidden text-xs text-rose-500 hover:text-rose-700 font-medium bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded transition" title="Excluir Prédio Atual">
+                        <i class="fa-solid fa-trash"></i> Excluir Prédio
+                    </button>
+                </div>
+                <span class="text-xs text-slate-500 bg-slate-200 px-2.5 py-1 rounded-full font-medium" id="contadorUnidadesPredio">0 Unidades</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100/70 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-200">
+                            <th class="py-3 px-4 font-semibold">Apartamento</th>
+                            <th class="py-3 px-4 font-semibold">Morador / Contato</th>
+                            <th class="py-3 px-4 font-semibold">Valor Parcela</th>
+                            <th class="py-3 px-4 font-semibold">Valor Pago</th>
+                            <th class="py-3 px-4 font-semibold">Status / Situação</th>
+                            <th class="py-3 px-4 font-semibold">Saldo Atual</th>
+                            <th id="colAcoesHeader" class="py-3 px-4 font-semibold text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaApartamentos" class="divide-y divide-slate-100 text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL DE LOGIN -->
+    <div id="modalLogin" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden">
+            <div class="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-shield-halved"></i> Acesso ao Sistema</h3>
+                <button onclick="fecharModalLogin()" class="text-indigo-200 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <form onsubmit="processarLogin(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Usuário / Login</label>
+                    <input type="text" id="loginUsuario" required placeholder="Digite seu usuário"
+                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Senha</label>
+                    <input type="password" id="loginSenha" required placeholder="••••••••"
+                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div id="loginErro" class="hidden text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg font-medium">
+                    Usuário ou senha incorretos.
+                </div>
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-600 space-y-1">
+                    <p class="font-semibold text-slate-700">Contas de Demonstração:</p>
+                    <p>&bull; <strong>Admin:</strong> <code>admin</code> / <code>admin123</code></p>
+                    <p>&bull; <strong>Operador:</strong> <code>operador</code> / <code>1234</code></p>
+                    <p>&bull; <strong>Morador:</strong> <code>morador</code> / <code>1234</code></p>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="fecharModalLogin()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition">
+                        Continuar como Visitante
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold transition shadow-sm">
+                        Entrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE GESTÃO DE USUÁRIOS E NÍVEIS DE ACESSO (SOMENTE ADMIN) -->
+    <div id="modalUsuarios" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-users-gear"></i> Controle de Usuários e Permissões</h3>
+                <button onclick="fecharModalUsuarios()" class="text-indigo-200 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-6">
+                <!-- Formulário de Novo Usuário / Edição -->
+                <form id="formNovoUsuario" onsubmit="salvarUsuario(event)" class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                    <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wider">Cadastrar ou Atualizar Usuário</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Nome Completo</label>
+                            <input type="text" id="usrNome" required placeholder="Ex: João Silva"
+                                class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Login (Usuário)</label>
+                            <input type="text" id="usrLogin" required placeholder="Ex: joao.silva"
+                                class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Senha</label>
+                            <input type="text" id="usrSenha" required placeholder="Senha de acesso"
+                                class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Perfil / Nível Base</label>
+                            <select id="usrPerfil" onchange="aplicarPresetPermissao()" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="visualizador">Visualizador (Apenas Leitura)</option>
+                                <option value="operador">Operador / Tesoureiro (Lançar Pagamentos)</option>
+                                <option value="gerente">Gerente Predial (Unidades e Pagamentos)</option>
+                                <option value="admin">Administrador Total</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Permissões Granulares Liberadas</label>
+                            <div class="grid grid-cols-2 gap-2 bg-white p-2.5 rounded-lg border border-slate-200 text-xs">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" id="permPagamentos" class="rounded text-indigo-600"> Lançar Pagamentos
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" id="permUnidades" class="rounded text-indigo-600"> Gerir Unidades/Moradores
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" id="permPredios" class="rounded text-indigo-600"> Criar/Excluir Prédios
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" id="permExportar" class="rounded text-indigo-600"> Exportar Relatórios
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition shadow-sm">
+                            <i class="fa-solid fa-user-plus mr-1"></i> Salvar Usuário
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Lista de Usuários Cadastrados -->
+                <div>
+                    <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Usuários Cadastrados no Sistema</h4>
+                    <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 text-xs uppercase">
+                                    <th class="py-2.5 px-3">Nome / Login</th>
+                                    <th class="py-2.5 px-3">Nível</th>
+                                    <th class="py-2.5 px-3">Permissões Ativas</th>
+                                    <th class="py-2.5 px-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaUsuarios" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edição de Unidade / Pagamento / Morador -->
+    <div id="modalApartamento" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden transform transition-all">
+            <div class="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg" id="modalTitulo">Editar Apartamento</h3>
+                <button onclick="fecharModal()" class="text-indigo-200 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="formApartamento" onsubmit="salvarApartamento(event)" class="p-6 space-y-4">
+                <input type="hidden" id="modalPredioId">
+                <input type="hidden" id="modalApKey">
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Número do Ap</label>
+                        <input type="text" id="modalNumeroAp" required placeholder="Ex: 101, 504"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Valor Parcela (R$)</label>
+                        <input type="number" step="0.01" id="modalValorParcela" required
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Nome do Morador</label>
+                    <input type="text" id="modalNome" required placeholder="Nome completo do condômino"
+                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Valor Pago no Mês (R$)</label>
+                    <input type="number" step="0.01" id="modalValorPago" required
+                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Observações / Histórico</label>
+                    <textarea id="modalObs" rows="2" placeholder="Ex: Pago com atraso, acordo feito..."
+                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm disabled:opacity-60"></textarea>
+                </div>
+
+                <div class="pt-4 flex justify-between items-center border-t border-slate-100">
+                    <button type="button" id="btnExcluirAp" onclick="excluirApartamentoAtual()" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-semibold transition">
+                        Excluir Unidade
+                    </button>
+                    <div class="flex gap-2 ml-auto">
+                        <button type="button" onclick="fecharModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition shadow-sm">
+                            Salvar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Novo Prédio -->
+    <div id="modalNovoPredio" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden transform transition-all">
+            <div class="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg">Cadastrar Novo Prédio</h3>
+                <button onclick="fecharModalNovoPredio()" class="text-indigo-200 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <form onsubmit="salvarNovoPredio(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Nome ou Número do Prédio</label>
+                    <input type="text" id="inputNomePredio" required placeholder="Ex: Prédio 8 ou Bloco A"
+                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div class="p-3 bg-indigo-50 rounded-lg text-xs text-indigo-700">
+                    <i class="fa-solid fa-circle-info"></i> O prédio será criado. Em seguida, você poderá adicionar os apartamentos e moradores individualmente.
+                </div>
+
+                <div class="pt-2 flex justify-end gap-3 border-t border-slate-100">
+                    <button type="button" onclick="fecharModalNovoPredio()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition shadow-sm">
+                        Criar Prédio
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Rodapé -->
+    <footer class="bg-white border-t border-slate-200 mt-12 py-6 text-center text-xs text-slate-500">
+        <p>Sistema de Controle de Condomínio &bull; Gestão de Múltiplos Prédios, Unidades e Níveis de Acesso</p>
+    </footer>
+
+    <!-- Lógica JavaScript -->
+    <script>
+        const VALOR_PADRAO = 350.00;
+
+        // ==========================================
+        // 1. GESTÃO DE USUÁRIOS E CONTROLE DE ACESSO
+        // ==========================================
+        function gerarUsuariosPadrao() {
+            return {
+                'admin': {
+                    nome: 'Administrador Geral',
+                    senha: 'admin123',
+                    perfil: 'admin',
+                    permissoes: { pagamentos: true, unidades: true, predios: true, exportar: true }
+                },
+                'operador': {
+                    nome: 'Auxiliar Financeiro',
+                    senha: '1234',
+                    perfil: 'operador',
+                    permissoes: { pagamentos: true, unidades: false, predios: false, exportar: true }
+                },
+                'morador': {
+                    nome: 'Condômino (Consulta)',
+                    senha: '1234',
+                    perfil: 'visualizador',
+                    permissoes: { pagamentos: false, unidades: false, predios: false, exportar: false }
+                }
+            };
+        }
+
+        let usuariosSistema = JSON.parse(localStorage.getItem('usuariosCondominio')) || gerarUsuariosPadrao();
+        let usuarioLogado = JSON.parse(sessionStorage.getItem('sessaoCondominio')) || null;
+
+        function salvarUsuariosStorage() {
+            localStorage.setItem('usuariosCondominio', JSON.stringify(usuariosSistema));
+        }
+
+        function obterPermissoesAtuais() {
+            if (!usuarioLogado) {
+                // Visitante sem login: apenas visualização
+                return { isAdmin: false, pagamentos: false, unidades: false, predios: false, exportar: false };
+            }
+            const usr = usuariosSistema[usuarioLogado];
+            if (!usr) {
+                usuarioLogado = null;
+                sessionStorage.removeItem('sessaoCondominio');
+                return { isAdmin: false, pagamentos: false, unidades: false, predios: false, exportar: false };
+            }
+            return {
+                isAdmin: usr.perfil === 'admin',
+                ...usr.permissoes
+            };
+        }
+
+        function atualizarInterfacePermissoes() {
+            const perms = obterPermissoesAtuais();
+            const usr = usuarioLogado ? usuariosSistema[usuarioLogado] : null;
+
+            // Botões do Topo
+            document.getElementById('btnNovoPredio').classList.toggle('hidden', !perms.predios);
+            document.getElementById('btnExportarCsv').classList.toggle('hidden', !perms.exportar);
+            document.getElementById('btnGerenciarUsuarios').classList.toggle('hidden', !perms.isAdmin);
+            
+            // Botões da Área de Prédios/Unidades
+            document.getElementById('btnNovoApartamento').classList.toggle('hidden', !perms.unidades);
+            document.getElementById('btnExcluirPredio').classList.toggle('hidden', !perms.predios);
+
+            // Coluna Ações na Tabela
+            const podeEditarAlgo = perms.pagamentos || perms.unidades;
+            document.getElementById('colAcoesHeader').classList.toggle('hidden', !podeEditarAlgo);
+
+            // Status de Login no Cabeçalho e Banner
+            const badge = document.getElementById('badgePerfil');
+            const btnLogin = document.getElementById('btnAbrirLogin');
+            const btnSair = document.getElementById('btnSair');
+            const banner = document.getElementById('bannerPermissao');
+            const textoBanner = document.getElementById('textoPermissaoAtual');
+
+            if (usr) {
+                btnLogin.classList.add('hidden');
+                btnSair.classList.remove('hidden');
+
+                if (usr.perfil === 'admin') {
+                    badge.className = "text-xs font-bold px-2.5 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5";
+                    badge.innerHTML = `<i class="fa-solid fa-crown"></i> ${usr.nome} (Admin)`;
+                    banner.className = "bg-amber-50 border-b border-amber-200 text-amber-900 text-xs py-2 px-4";
+                    textoBanner.innerHTML = `<i class="fa-solid fa-shield-halved text-amber-600 mr-1"></i> <strong>Acesso Total Liberado:</strong> Você está logado como Administrador e pode gerenciar todo o sistema e permissões.`;
+                } else if (podeEditarAlgo) {
+                    badge.className = "text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 flex items-center gap-1.5";
+                    badge.innerHTML = `<i class="fa-solid fa-user-check"></i> ${usr.nome}`;
+                    banner.className = "bg-emerald-50 border-b border-emerald-200 text-emerald-900 text-xs py-2 px-4";
+                    textoBanner.innerHTML = `<i class="fa-solid fa-key text-emerald-600 mr-1"></i> <strong>Acesso Personalizado:</strong> Logado como ${usr.nome}. Suas permissões de edição estão ativas conforme liberação do administrador.`;
+                } else {
+                    badge.className = "text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-sky-500/20 text-sky-200 border border-sky-400/40 flex items-center gap-1.5";
+                    badge.innerHTML = `<i class="fa-solid fa-eye"></i> ${usr.nome} (Visualização)`;
+                    banner.className = "bg-slate-200/80 border-b border-slate-300 text-slate-700 text-xs py-2 px-4";
+                    textoBanner.innerHTML = `<i class="fa-solid fa-eye text-slate-500 mr-1"></i> <strong>Modo Visualização:</strong> Logado como ${usr.nome}. Você possui acesso apenas para consulta dos dados.`;
+                }
+            } else {
+                btnLogin.classList.remove('hidden');
+                btnSair.classList.add('hidden');
+                badge.className = "text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-indigo-800 text-indigo-200 border border-indigo-700 flex items-center gap-1.5";
+                badge.innerHTML = `<i class="fa-solid fa-eye"></i> Visitante (Visualização)`;
+                banner.className = "bg-slate-200/80 border-b border-slate-300 text-slate-700 text-xs py-2 px-4";
+                textoBanner.innerHTML = `<i class="fa-solid fa-lock text-slate-500 mr-1"></i> <strong>Modo Somente Leitura:</strong> Faça login como Administrador ou Usuário autorizado para editar dados.`;
+            }
+
+            renderizarTabela();
+        }
+
+        // Funções do Modal de Login
+        function abrirModalLogin() {
+            document.getElementById('loginUsuario').value = '';
+            document.getElementById('loginSenha').value = '';
+            document.getElementById('loginErro').classList.add('hidden');
+            document.getElementById('modalLogin').classList.remove('hidden');
+        }
+
+        function fecharModalLogin() {
+            document.getElementById('modalLogin').classList.add('hidden');
+        }
+
+        function processarLogin(event) {
+            event.preventDefault();
+            const login = document.getElementById('loginUsuario').value.trim();
+            const senha = document.getElementById('loginSenha').value;
+
+            if (usuariosSistema[login] && usuariosSistema[login].senha === senha) {
+                usuarioLogado = login;
+                sessionStorage.setItem('sessaoCondominio', JSON.stringify(login));
+                fecharModalLogin();
+                atualizarInterfacePermissoes();
+            } else {
+                document.getElementById('loginErro').classList.remove('hidden');
+            }
+        }
+
+        function fazerLogout() {
+            usuarioLogado = null;
+            sessionStorage.removeItem('sessaoCondominio');
+            atualizarInterfacePermissoes();
+        }
+
+        // Funções de Gestão de Usuários (Admin)
+        function abrirModalUsuarios() {
+            if (!obterPermissoesAtuais().isAdmin) return;
+            document.getElementById('formNovoUsuario').reset();
+            aplicarPresetPermissao();
+            renderizarTabelaUsuarios();
+            document.getElementById('modalUsuarios').classList.remove('hidden');
+        }
+
+        function fecharModalUsuarios() {
+            document.getElementById('modalUsuarios').classList.add('hidden');
+        }
+
+        function aplicarPresetPermissao() {
+            const perfil = document.getElementById('usrPerfil').value;
+            const cPag = document.getElementById('permPagamentos');
+            const cUni = document.getElementById('permUnidades');
+            const cPre = document.getElementById('permPredios');
+            const cExp = document.getElementById('permExportar');
+
+            if (perfil === 'admin') {
+                cPag.checked = cUni.checked = cPre.checked = cExp.checked = true;
+            } else if (perfil === 'gerente') {
+                cPag.checked = cUni.checked = cExp.checked = true;
+                cPre.checked = false;
+            } else if (perfil === 'operador') {
+                cPag.checked = cExp.checked = true;
+                cUni.checked = cPre.checked = false;
+            } else {
+                cPag.checked = cUni.checked = cPre.checked = cExp.checked = false;
+            }
+        }
+
+        function salvarUsuario(event) {
+            event.preventDefault();
+            if (!obterPermissoesAtuais().isAdmin) return;
+
+            const nome = document.getElementById('usrNome').value.trim();
+            const login = document.getElementById('usrLogin').value.trim();
+            const senha = document.getElementById('usrSenha').value;
+            const perfil = document.getElementById('usrPerfil').value;
+
+            usuariosSistema[login] = {
+                nome: nome,
+                senha: senha,
+                perfil: perfil,
+                permissoes: {
+                    pagamentos: document.getElementById('permPagamentos').checked,
+                    unidades: document.getElementById('permUnidades').checked,
+                    predios: document.getElementById('permPredios').checked,
+                    exportar: document.getElementById('permExportar').checked
+                }
+            };
+
+            salvarUsuariosStorage();
+            document.getElementById('formNovoUsuario').reset();
+            aplicarPresetPermissao();
+            renderizarTabelaUsuarios();
+            atualizarInterfacePermissoes();
+        }
+
+        function editarUsuarioForm(login) {
+            const u = usuariosSistema[login];
+            if (!u) return;
+            document.getElementById('usrNome').value = u.nome;
+            document.getElementById('usrLogin').value = login;
+            document.getElementById('usrSenha').value = u.senha;
+            document.getElementById('usrPerfil').value = u.perfil;
+            document.getElementById('permPagamentos').checked = u.permissoes.pagamentos;
+            document.getElementById('permUnidades').checked = u.permissoes.unidades;
+            document.getElementById('permPredios').checked = u.permissoes.predios;
+            document.getElementById('permExportar').checked = u.permissoes.exportar;
+        }
+
+        function excluirUsuario(login) {
+            if (login === 'admin') {
+                alert('O administrador principal não pode ser excluído.');
+                return;
+            }
+            if (confirm(`Deseja remover o acesso do usuário "${login}"?`)) {
+                delete usuariosSistema[login];
+                salvarUsuariosStorage();
+                renderizarTabelaUsuarios();
+            }
+        }
+
+        function renderizarTabelaUsuarios() {
+            const tbody = document.getElementById('tabelaUsuarios');
+            tbody.innerHTML = '';
+
+            for (let login in usuariosSistema) {
+                const u = usuariosSistema[login];
+                const tags = [];
+                if (u.permissoes.pagamentos) tags.push('<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[11px] font-medium">Pagamentos</span>');
+                if (u.permissoes.unidades) tags.push('<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[11px] font-medium">Unidades</span>');
+                if (u.permissoes.predios) tags.push('<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[11px] font-medium">Prédios</span>');
+                if (u.permissoes.exportar) tags.push('<span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded text-[11px] font-medium">Exportar</span>');
+                if (tags.length === 0) tags.push('<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[11px]">Somente Visualização</span>');
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="py-2.5 px-3">
+                        <div class="font-semibold text-slate-800">${u.nome}</div>
+                        <div class="text-xs text-slate-400">@${login}</div>
+                    </td>
+                    <td class="py-2.5 px-3 capitalize text-xs font-semibold text-slate-600">${u.perfil}</td>
+                    <td class="py-2.5 px-3"><div class="flex flex-wrap gap-1">${tags.join('')}</div></td>
+                    <td class="py-2.5 px-3 text-center">
+                        <div class="flex justify-center gap-1.5">
+                            <button onclick="editarUsuarioForm('${login}')" class="p-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded transition" title="Editar Permissões">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            ${login !== 'admin' ? `
+                            <button onclick="excluirUsuario('${login}')" class="p-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded transition" title="Excluir Usuário">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>` : ''}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        // ==========================================
+        // 2. GESTÃO DO CONDOMÍNIO (PRÉDIOS E UNIDADES)
+        // ==========================================
+        function gerarEstruturaPadrao() {
+            let estrutura = {};
+            for (let p = 1; p <= 7; p++) {
+                let nomePredio = `Prédio ${p}`;
+                estrutura[nomePredio] = {};
+                for (let andar = 5; andar >= 1; andar--) {
+                    for (let ap = 1; ap <= 4; ap++) {
+                        let numeroAp = `${andar}0${ap}`;
+                        estrutura[nomePredio][numeroAp] = {
+                            nome: `Condômino Ap ${numeroAp}`,
+                            valorParcela: VALOR_PADRAO,
+                            pagamentos: {}
+                        };
+                    }
+                }
+            }
+            return estrutura;
+        }
+
+        let dadosCondominio = JSON.parse(localStorage.getItem('dadosCondominioCustom')) || gerarEstruturaPadrao();
+        let prediosKeys = Object.keys(dadosCondominio);
+        let predioAtivo = prediosKeys[0] || 'Prédio 1';
+        let mesAtivo = document.getElementById('mesSelect').value;
+
+        function salvarStorage() {
+            localStorage.setItem('dadosCondominioCustom', JSON.stringify(dadosCondominio));
+        }
+
+        function renderizarAbasPredios() {
+            prediosKeys = Object.keys(dadosCondominio);
+            if (prediosKeys.length > 0 && !dadosCondominio[predioAtivo]) {
+                predioAtivo = prediosKeys[0];
+            }
+
+            const container = document.getElementById('predioTabs');
+            container.innerHTML = '';
+
+            prediosKeys.forEach(predio => {
+                const isActive = predio === predioAtivo;
+                const btn = document.createElement('button');
+                btn.className = `px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 ${
+                    isActive 
+                        ? 'bg-indigo-600 text-white shadow-sm' 
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`;
+                btn.innerHTML = `<i class="fa-solid fa-building"></i> <span>${predio}</span>`;
+                btn.onclick = () => {
+                    predioAtivo = predio;
+                    renderizarAbasPredios();
+                    renderizarTabela();
+                };
+                container.appendChild(btn);
+            });
+
+            document.getElementById('tituloPredioAtual').innerText = predioAtivo;
+            document.getElementById('subInfoPredios').innerText = `Gerenciando ${prediosKeys.length} prédios cadastrados`;
+        }
+
+        function renderizarTabela() {
+            const tbody = document.getElementById('tabelaApartamentos');
+            tbody.innerHTML = '';
+
+            const perms = obterPermissoesAtuais();
+            const podeEditarAlgo = perms.pagamentos || perms.unidades;
+
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            let unidades = dadosCondominio[predioAtivo] || {};
+            let totalUnidadesPredio = Object.keys(unidades).length;
+            document.getElementById('contadorUnidadesPredio').innerText = `${totalUnidadesPredio} Unidades`;
+
+            let globalAdimplentes = 0;
+            let globalInadimplentes = 0;
+            let globalRecebido = 0;
+            let globalDevido = 0;
+            let totalUnidadesGlobal = 0;
+
+            prediosKeys.forEach(p => {
+                const aps = dadosCondominio[p];
+                for (let ap in aps) {
+                    totalUnidadesGlobal++;
+                    const dados = aps[ap];
+                    const reg = dados.pagamentos[mesAtivo] || { valorPago: 0 };
+                    const pago = Number(reg.valorPago) || 0;
+                    const parcela = Number(dados.valorParcela) || VALOR_PADRAO;
+
+                    globalDevido += parcela;
+                    globalRecebido += pago;
+
+                    if (pago >= parcela) {
+                        globalAdimplentes++;
+                    } else {
+                        globalInadimplentes++;
+                    }
+                }
+            });
+
+            document.getElementById('statTotalUnidades').innerText = totalUnidadesGlobal;
+            document.getElementById('statTotalPrediosSub').innerText = `${prediosKeys.length} Prédios cadastrados`;
+            document.getElementById('statAdimplentes').innerText = globalAdimplentes;
+            document.getElementById('statAdimplentesPct').innerText = totalUnidadesGlobal > 0 ? `${((globalAdimplentes / totalUnidadesGlobal) * 100).toFixed(1)}%` : '0%';
+            document.getElementById('statInadimplentes').innerText = globalInadimplentes;
+            document.getElementById('statInadimplentesPct').innerText = totalUnidadesGlobal > 0 ? `${((globalInadimplentes / totalUnidadesGlobal) * 100).toFixed(1)}%` : '0%';
+            
+            const saldoLiquidoGlobal = globalRecebido - globalDevido;
+            const elSaldo = document.getElementById('statSaldoLiquido');
+            elSaldo.innerText = `R$ ${saldoLiquidoGlobal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            elSaldo.className = `text-xl font-bold mt-1 ${saldoLiquidoGlobal >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+
+            for (let ap in unidades) {
+                const dados = unidades[ap];
+                const registroMes = dados.pagamentos[mesAtivo] || { valorPago: 0, obs: '' };
+                const valorPago = Number(registroMes.valorPago) || 0;
+                const valorParcela = Number(dados.valorParcela) || VALOR_PADRAO;
+                const saldo = valorPago - valorParcela;
+                const isAdimplente = valorPago >= valorParcela;
+
+                const matchSearch = ap.toLowerCase().includes(searchVal) || dados.nome.toLowerCase().includes(searchVal);
+                let matchStatus = true;
+                if (statusFilter === 'adimplente') matchStatus = isAdimplente;
+                if (statusFilter === 'inadimplente') matchStatus = !isAdimplente;
+                if (statusFilter === 'saldo_positivo') matchStatus = saldo > 0;
+
+                if (!matchSearch || !matchStatus) continue;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition border-b border-slate-100";
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-bold text-slate-700">
+                        <span class="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md text-xs font-semibold">Ap ${ap}</span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="font-medium text-slate-800">${dados.nome}</div>
+                        ${registroMes.obs ? `<div class="text-xs text-slate-400 italic mt-0.5"><i class="fa-solid fa-comment-dots"></i> ${registroMes.obs}</div>` : ''}
+                    </td>
+                    <td class="py-3 px-4 text-slate-600">R$ ${valorParcela.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="py-3 px-4 font-semibold text-slate-700">R$ ${valorPago.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="py-3 px-4">
+                        ${isAdimplente 
+                            ? '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700"><i class="fa-solid fa-check-circle"></i> Adimplente</span>'
+                            : '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700"><i class="fa-solid fa-triangle-exclamation"></i> Inadimplente</span>'
+                        }
+                    </td>
+                    <td class="py-3 px-4 font-bold ${saldo >= 0 ? 'text-emerald-600' : 'text-rose-600'}">
+                        ${saldo >= 0 ? '+' : ''}R$ ${saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
+                    </td>
+                    ${podeEditarAlgo ? `
+                    <td class="py-3 px-4 text-center">
+                        <button onclick="abrirModalEdicao('${predioAtivo}', '${ap}')" class="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg transition" title="Editar Unidade / Pagamento">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                    </td>` : ''}
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        // Gestão de Prédios
+        function abrirModalNovoPredio() {
+            if (!obterPermissoesAtuais().predios) return;
+            document.getElementById('inputNomePredio').value = '';
+            document.getElementById('modalNovoPredio').classList.remove('hidden');
+        }
+
+        function fecharModalNovoPredio() {
+            document.getElementById('modalNovoPredio').classList.add('hidden');
+        }
+
+        function salvarNovoPredio(event) {
+            event.preventDefault();
+            if (!obterPermissoesAtuais().predios) return;
+
+            const nomePredio = document.getElementById('inputNomePredio').value.trim();
+            if (!nomePredio) return;
+
+            if (dadosCondominio[nomePredio]) {
+                alert('Já existe um prédio com esse nome!');
+                return;
+            }
+
+            dadosCondominio[nomePredio] = {};
+            predioAtivo = nomePredio;
+            salvarStorage();
+            fecharModalNovoPredio();
+            renderizarAbasPredios();
+            renderizarTabela();
+        }
+
+        function removerPredioAtual() {
+            if (!obterPermissoesAtuais().predios) return;
+            if (prediosKeys.length <= 1) {
+                alert('O condomínio precisa ter pelo menos um prédio cadastrado.');
+                return;
+            }
+            if (confirm(`Tem certeza que deseja excluir o "${predioAtivo}" e todas as suas unidades?`)) {
+                delete dadosCondominio[predioAtivo];
+                prediosKeys = Object.keys(dadosCondominio);
+                predioAtivo = prediosKeys[0];
+                salvarStorage();
+                renderizarAbasPredios();
+                renderizarTabela();
+            }
+        }
+
+        // Gestão de Apartamentos
+        function abrirModalNovoApartamento() {
+            const perms = obterPermissoesAtuais();
+            if (!perms.unidades) return;
+
+            document.getElementById('modalPredioId').value = predioAtivo;
+            document.getElementById('modalApKey').value = '';
+            document.getElementById('modalTitulo').innerText = `Adicionar Unidade em ${predioAtivo}`;
+            
+            document.getElementById('modalNumeroAp').value = '';
+            document.getElementById('modalNumeroAp').disabled = false;
+            document.getElementById('modalNome').value = '';
+            document.getElementById('modalNome').disabled = false;
+            document.getElementById('modalValorParcela').value = VALOR_PADRAO;
+            document.getElementById('modalValorParcela').disabled = false;
+            
+            document.getElementById('modalValorPago').value = '0';
+            document.getElementById('modalValorPago').disabled = !perms.pagamentos;
+            document.getElementById('modalObs').value = '';
+            document.getElementById('modalObs').disabled = !perms.pagamentos;
+            
+            document.getElementById('btnExcluirAp').style.display = 'none';
+            document.getElementById('modalApartamento').classList.remove('hidden');
+        }
+
+        function abrirModalEdicao(predio, ap) {
+            const perms = obterPermissoesAtuais();
+            if (!perms.pagamentos && !perms.unidades) return;
+
+            document.getElementById('modalPredioId').value = predio;
+            document.getElementById('modalApKey').value = ap;
+            document.getElementById('modalTitulo').innerText = `${predio} - Apartamento ${ap}`;
+            
+            const dados = dadosCondominio[predio][ap];
+            document.getElementById('modalNumeroAp').value = ap;
+            document.getElementById('modalNumeroAp').disabled = true;
+            
+            // Bloqueia campos de cadastro se usuário só tiver permissão de pagamento
+            document.getElementById('modalNome').value = dados.nome;
+            document.getElementById('modalNome').disabled = !perms.unidades;
+            document.getElementById('modalValorParcela').value = dados.valorParcela;
+            document.getElementById('modalValorParcela').disabled = !perms.unidades;
+
+            // Bloqueia campos de pagamento se usuário só tiver permissão de cadastro
+            const reg = dados.pagamentos[mesAtivo] || { valorPago: 0, obs: '' };
+            document.getElementById('modalValorPago').value = reg.valorPago;
+            document.getElementById('modalValorPago').disabled = !perms.pagamentos;
+            document.getElementById('modalObs').value = reg.obs;
+            document.getElementById('modalObs').disabled = !perms.pagamentos;
+
+            document.getElementById('btnExcluirAp').style.display = perms.unidades ? 'block' : 'none';
+            document.getElementById('modalApartamento').classList.remove('hidden');
+        }
+
+        function fecharModal() {
+            document.getElementById('modalApartamento').classList.add('hidden');
+        }
+
+        function salvarApartamento(event) {
+            event.preventDefault();
+            const perms = obterPermissoesAtuais();
+            if (!perms.pagamentos && !perms.unidades) return;
+
+            const predio = document.getElementById('modalPredioId').value;
+            const apKeyOriginal = document.getElementById('modalApKey').value;
+            const numeroAp = document.getElementById('modalNumeroAp').value.trim();
+            const nome = document.getElementById('modalNome').value.trim();
+            const valorParcela = parseFloat(document.getElementById('modalValorParcela').value);
+            const valorPago = parseFloat(document.getElementById('modalValorPago').value);
+            const obs = document.getElementById('modalObs').value;
+
+            if (!dadosCondominio[predio]) dadosCondominio[predio] = {};
+
+            if (!apKeyOriginal) {
+                if (!perms.unidades) return;
+                if (dadosCondominio[predio][numeroAp]) {
+                    alert('Este apartamento já está cadastrado neste prédio!');
+                    return;
+                }
+                dadosCondominio[predio][numeroAp] = {
+                    nome: nome,
+                    valorParcela: valorParcela,
+                    pagamentos: {}
+                };
+                if (perms.pagamentos) {
+                    dadosCondominio[predio][numeroAp].pagamentos[mesAtivo] = { valorPago: valorPago, obs: obs };
+                }
+            } else {
+                if (perms.unidades) {
+                    dadosCondominio[predio][apKeyOriginal].nome = nome;
+                    dadosCondominio[predio][apKeyOriginal].valorParcela = valorParcela;
+                }
+                if (perms.pagamentos) {
+                    if (!dadosCondominio[predio][apKeyOriginal].pagamentos[mesAtivo]) {
+                        dadosCondominio[predio][apKeyOriginal].pagamentos[mesAtivo] = {};
+                    }
+                    dadosCondominio[predio][apKeyOriginal].pagamentos[mesAtivo].valorPago = valorPago;
+                    dadosCondominio[predio][apKeyOriginal].pagamentos[mesAtivo].obs = obs;
+                }
+            }
+
+            salvarStorage();
+            fecharModal();
+            renderizarTabela();
+        }
+
+        function excluirApartamentoAtual() {
+            if (!obterPermissoesAtuais().unidades) return;
+            const predio = document.getElementById('modalPredioId').value;
+            const ap = document.getElementById('modalApKey').value;
+
+            if (confirm(`Deseja realmente remover o apartamento ${ap} do ${predio}?`)) {
+                delete dadosCondominio[predio][ap];
+                salvarStorage();
+                fecharModal();
+                renderizarTabela();
+            }
+        }
+
+        document.getElementById('mesSelect').addEventListener('change', (e) => {
+            mesAtivo = e.target.value;
+            renderizarTabela();
+        });
+
+        document.getElementById('searchInput').addEventListener('input', () => {
+            renderizarTabela();
+        });
+
+        document.getElementById('statusFilter').addEventListener('change', () => {
+            renderizarTabela();
+        });
+
+        function exportarDados() {
+            if (!obterPermissoesAtuais().exportar) return;
+            let csvContent = "data:text/csv;charset=utf-8,Predio;Apartamento;Morador;Mes;ValorParcela;ValorPago;Status;Saldo\n";
+
+            prediosKeys.forEach(p => {
+                const aps = dadosCondominio[p];
+                for (let ap in aps) {
+                    const dados = aps[ap];
+                    const reg = dados.pagamentos[mesAtivo] || { valorPago: 0 };
+                    const pago = Number(reg.valorPago) || 0;
+                    const parcela = Number(dados.valorParcela) || VALOR_PADRAO;
+                    const saldo = pago - parcela;
+                    const status = pago >= parcela ? 'Adimplente' : 'Inadimplente';
+
+                    csvContent += `${p};${ap};"${dados.nome}";${mesAtivo};${parcela};${pago};${status};${saldo}\n`;
+                }
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `condominio_relatorio_${mesAtivo}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Inicialização
+        renderizarAbasPredios();
+        atualizarInterfacePermissoes();
+    </script>
+</body>
+</html>
